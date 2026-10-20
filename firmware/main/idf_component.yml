@@ -1,0 +1,16 @@
+dependencies:
+  idf:
+    version: ">=6.1.0"
+
+  waveshare/esp32_p4_wifi6_touch_lcd_4b:
+    version: ">=3.0.1"
+
+  hardcoreerik/esp-rtl-sdr:
+    git: https://github.com/hardcoreerik/esp-rtl-sdr.git
+    version: v0.9.3
+
+  lvgl/lvgl:
+    version: ">=9.2.0"
+
+  espressif/esp-dsp:
+    version: ">=1.3.0"
