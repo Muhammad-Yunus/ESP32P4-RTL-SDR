@@ -16,6 +16,7 @@
 #include "iq_ring.h"
 #include "dsp/sdr_smoke.h"
 #include "dsp/spectrum.h"
+#include "dsp/waterfall.h"
 #include "dsp/sdr_dsp.h"
 
 static const char *TAG = "main";
@@ -127,6 +128,12 @@ void app_main(void)
              * test has finished, so sdr_dsp is the sole ring consumer. */
             esp_err_t si2 = spectrum_init();
             if (si2 == ESP_OK) {
+                /* Phase 2.2: initialise the waterfall (column gen + inferno LUT). */
+                esp_err_t wi = waterfall_init();
+                if (wi != ESP_OK) {
+                    ESP_LOGW(TAG, "waterfall_init failed: %s (spectrum still on)",
+                             esp_err_to_name(wi));
+                }
                 esp_err_t di = sdr_dsp_start();
                 if (di == ESP_OK) {
                     ESP_LOGI(TAG, "sdr_dsp task running; 1 Hz spectrum metrics enabled");

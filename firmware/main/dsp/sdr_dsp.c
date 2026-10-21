@@ -15,6 +15,7 @@
 
 #include "iq_ring.h"
 #include "spectrum.h"
+#include "waterfall.h"
 #include "sdr_control.h"
 
 static const char *TAG = "sdr_dsp";
@@ -23,6 +24,9 @@ static TaskHandle_t s_task = NULL;
 static volatile bool s_running = false;
 static volatile uint64_t s_blocks = 0;
 static SemaphoreHandle_t s_stop_sem = NULL;
+
+/* Per-block scratch for waterfall column (ARCHITECTURE 4.2: ~1 col / 250 ms). */
+static int16_t s_wf_bins[SPECTRUM_BINS];
 
 static void sdr_dsp_task(void *arg)
 {
@@ -41,6 +45,12 @@ static void sdr_dsp_task(void *arg)
             esp_err_t sr = spectrum_process(view.data, view.bytes);
             if (sr == ESP_OK) {
                 s_blocks++;
+                /* Push a waterfall column whenever the spectrum has a
+                 * fresh frame (one per ~250 ms block = ARCHITECTURE 4.2). */
+                if (spectrum_read(s_wf_bins) == ESP_OK &&
+                    waterfall_is_ready()) {
+                    (void)waterfall_push(s_wf_bins);
+                }
             }
         } else {
             /* Ring empty: yield briefly. */
