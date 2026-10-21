@@ -14,6 +14,7 @@
 #include "sdr_stream.h"
 #include "bsp_bringup.h"
 #include "iq_ring.h"
+#include "dsp/sdr_smoke.h"
 
 static const char *TAG = "main";
 
@@ -109,7 +110,15 @@ void app_main(void)
         esp_err_t ss = sdr_stream_start(SDR_CONTROL_DEFAULT_FREQ_HZ,
                                         SDR_CONTROL_DEFAULT_RATE_SP);
         if (ss == ESP_OK) {
-            ESP_LOGI(TAG, "stream start requested; awaiting EVT_STREAM_STARTED");
+            ESP_LOGI(TAG, "stream start requested; running 30 s smoke test (M1)");
+            /* Task 1.10: drain the ring for 30 s and assert M1 exit criteria. */
+            esp_err_t sr = sdr_smoke_run();
+            if (sr == ESP_OK) {
+                ESP_LOGI(TAG, "M1 smoke test complete");
+            } else {
+                ESP_LOGW(TAG, "M1 smoke test failed to run: %s",
+                         esp_err_to_name(sr));
+            }
         } else {
             ESP_LOGW(TAG, "stream start failed: %s — boot continues without streaming",
                      esp_rtl_sdr_err_to_name(ss));

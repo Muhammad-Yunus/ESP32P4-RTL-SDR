@@ -3,6 +3,7 @@ idf_component_register(SRCS "main.c"
                             "sdr_stream.c"
                             "bsp_bringup.c"
                             "dsp/iq_ring.c"
+                            "dsp/sdr_smoke.c"
                     INCLUDE_DIRS "."
                                   "dsp"
                     REQUIRES
