@@ -11,6 +11,7 @@
 #include "nvs_flash.h"
 
 #include "sdr_control.h"
+#include "sdr_stream.h"
 #include "bsp_bringup.h"
 #include "iq_ring.h"
 
@@ -85,5 +86,23 @@ void app_main(void)
     esp_err_t br = bsp_bringup_init();
     if (br != ESP_OK) {
         ESP_LOGE(TAG, "BSP bring-up failed: %s (boot continues)", esp_err_to_name(br));
+    }
+
+    /*
+     * Task 1.8 + 1.9: attempt to start streaming at the default reference
+     * (KZEL 96.1 MHz, 960 KSPS) with IQ blocks copied into the ring. If the
+     * dongle is not present / not powered, sdr_control_start() returns a
+     * driver error (e.g. no accepted device) — log it and do NOT abort.
+     * When the powered dongle is connected, this yields EVT_READY +
+     * EVT_STREAM_STARTED and IQ blocks flowing into the ring (task 1.9).
+     */
+    esp_err_t ss = sdr_stream_start(SDR_CONTROL_DEFAULT_FREQ_HZ,
+                                    SDR_CONTROL_DEFAULT_RATE_SP);
+    if (ss == ESP_OK) {
+        ESP_LOGI(TAG, "stream start requested; awaiting dongle (powered) for EVT_STREAM_STARTED");
+    } else {
+        ESP_LOGW(TAG, "stream start failed: %s — expecting a powered RTL-SDR dongle "
+                "on the OTG port; boot continues without streaming",
+                 esp_rtl_sdr_err_to_name(ss));
     }
 }

@@ -144,9 +144,9 @@ from `docs/`:
 | 1.5 | `sdr_control.c/h` lifecycle wrapper + USB bus diagnostics | ✅ |
 | 1.6 | `dsp/iq_ring.c/h` lock-free SPSC ring | ✅ |
 | 1.7 | BSP display + audio bring-up | ✅ |
-| 1.8 | RTL-SDR stream start (96.1 MHz / 960 K) | ⬜ Unblocked (needs powered dongle) |
-| 1.9 | IQ callback → ring copy | ⬜ Unblocked |
-| 1.10 | 30 s smoke test (`effective_sps > 900000`, `overruns == 0`) | ⬜ Unblocked |
+| 1.8 | RTL-SDR stream start (96.1 MHz / 960 K) | ✅ |
+| 1.9 | IQ callback → ring copy | ✅ |
+| 1.10 | 30 s smoke test (`effective_sps > 900000`, `overruns == 0`) | ⬜ Blocked (needs powered RTL-SDR dongle on OTG) |
 
 ### Unblocked — USB enumeration (resolved)
 
