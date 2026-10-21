@@ -15,6 +15,8 @@
 #include "bsp_bringup.h"
 #include "iq_ring.h"
 #include "dsp/sdr_smoke.h"
+#include "dsp/spectrum.h"
+#include "dsp/sdr_dsp.h"
 
 static const char *TAG = "main";
 
@@ -110,14 +112,30 @@ void app_main(void)
         esp_err_t ss = sdr_stream_start(SDR_CONTROL_DEFAULT_FREQ_HZ,
                                         SDR_CONTROL_DEFAULT_RATE_SP);
         if (ss == ESP_OK) {
-            ESP_LOGI(TAG, "stream start requested; running 30 s smoke test (M1)");
-            /* Task 1.10: drain the ring for 30 s and assert M1 exit criteria. */
+            /* Task 1.10 (M1 gate): run the one-time 30 s smoke test first,
+             * with no other consumer on the ring, so the throughput metric is
+             * unambiguous. */
+            ESP_LOGI(TAG, "running 30 s M1 smoke test");
             esp_err_t sr = sdr_smoke_run();
             if (sr == ESP_OK) {
                 ESP_LOGI(TAG, "M1 smoke test complete");
             } else {
-                ESP_LOGW(TAG, "M1 smoke test failed to run: %s",
-                         esp_err_to_name(sr));
+                ESP_LOGW(TAG, "M1 smoke test failed to run: %s", esp_err_to_name(sr));
+            }
+
+            /* Phase 2.1: now bring up the continuous DSP pipeline. The smoke
+             * test has finished, so sdr_dsp is the sole ring consumer. */
+            esp_err_t si2 = spectrum_init();
+            if (si2 == ESP_OK) {
+                esp_err_t di = sdr_dsp_start();
+                if (di == ESP_OK) {
+                    ESP_LOGI(TAG, "sdr_dsp task running; 1 Hz spectrum metrics enabled");
+                } else {
+                    ESP_LOGW(TAG, "sdr_dsp_start failed: %s", esp_err_to_name(di));
+                }
+            } else {
+                ESP_LOGW(TAG, "spectrum_init failed: %s (DSP pipeline offline)",
+                         esp_err_to_name(si2));
             }
         } else {
             ESP_LOGW(TAG, "stream start failed: %s — boot continues without streaming",

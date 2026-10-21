@@ -24,6 +24,10 @@ static bool s_installed = false;
 static sdr_control_event_cb_t s_event_handler = NULL;
 static void *s_event_ctx = NULL;
 
+/* Last requested LO / sample rate (for read-only queries). */
+static volatile uint32_t s_last_freq_hz = 0;
+static volatile uint32_t s_last_rate_sps = 0;
+
 /*
  * Driver event callback — runs on the USB owner task. Translate the driver
  * event enum to the app-facing enum and forward. Must not block.
@@ -121,6 +125,9 @@ esp_err_t sdr_control_start(uint32_t frequency_hz, uint32_t sample_rate_sps)
         return ret;
     }
 
+    s_last_freq_hz = frequency_hz;
+    s_last_rate_sps = sample_rate_sps;
+
     ESP_LOGI(TAG, "start requested: LO %u Hz @ %u SPS",
              (unsigned)frequency_hz, (unsigned)sample_rate_sps);
     return ESP_OK;
@@ -140,6 +147,16 @@ esp_err_t sdr_control_retune(uint32_t frequency_hz)
         return ESP_ERR_INVALID_STATE;
     }
     return esp_rtl_sdr_retune_hz(s_handle, frequency_hz);
+}
+
+uint32_t sdr_control_last_freq_hz(void)
+{
+    return s_last_freq_hz;
+}
+
+uint32_t sdr_control_last_rate_sps(void)
+{
+    return s_last_rate_sps;
 }
 
 esp_err_t sdr_control_set_gain(int gain_tenth_db)

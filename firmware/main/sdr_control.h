@@ -162,6 +162,16 @@ bool sdr_control_is_installed(void);
 bool sdr_control_device_ready(void);
 
 /**
+ * The LO (Hz) last successfully requested via start/retune. 0 if none yet.
+ */
+uint32_t sdr_control_last_freq_hz(void);
+
+/**
+ * The sample rate (SPS) last requested via start. 0 if none yet.
+ */
+uint32_t sdr_control_last_rate_sps(void);
+
+/**
  * Stop (if needed) and destroy the handle. Called on shutdown only.
  */
 esp_err_t sdr_control_deinit(void);
