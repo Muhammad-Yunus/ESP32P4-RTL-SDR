@@ -122,13 +122,55 @@ from `docs/`:
 
 > *Update this line as phases complete.*
 
-**Current phase:** Phase 0 (planning complete, no code written yet)
+**Current phase:** Phase 1 (in progress — scaffold builds/boots; SDR wrapper done; USB dongle enumeration blocked on hardware)
 
 | Phase | Status |
 |-------|--------|
 | Phase 0: Planning & docs | ✅ Complete |
-| Phase 1: BSP + SDR bring-up | ⬜ Not started |
+| Phase 1: BSP + SDR bring-up | 🔄 In progress (task 1.1–1.5 done; 1.6+ pending) |
 | Phase 2: DSP pipeline | ⬜ Not started |
 | Phase 3: UI dashboards | ⬜ Not started |
 | Phase 4: FM radio + RDS | ⬜ Not started |
 | Phase 5: Polish + features | ⬜ Not started |
+
+### Phase 1 Task Status
+
+| Task | Description | Status |
+|------|-------------|--------|
+| 1.1 | Verify IDF 6.1 + P4 target + component resolve | ✅ |
+| 1.2 | Firmware scaffold (sdkconfig, partitions, CMake, deps) | ✅ |
+| 1.3 | Chip-revision fix (rev v1.0 early silicon) | ✅ |
+| 1.4 | Build + flash + boot on COM11 | ✅ |
+| 1.5 | `sdr_control.c/h` lifecycle wrapper + USB bus diagnostics | ✅ |
+| 1.6 | `dsp/iq_ring.c/h` lock-free SPSC ring | ✅ |
+| 1.7 | BSP display + audio bring-up | ✅ |
+| 1.8 | RTL-SDR stream start (96.1 MHz / 960 K) | ⬜ Unblocked (needs powered dongle) |
+| 1.9 | IQ callback → ring copy | ⬜ Unblocked |
+| 1.10 | 30 s smoke test (`effective_sps > 900000`, `overruns == 0`) | ⬜ Unblocked |
+
+### Unblocked — USB enumeration (resolved)
+
+**Symptom:** Zero USB enumeration on the Type-C "USB OTG" port — `raw_devices=0`,
+`new_dev=0`, repeated `nothing has enumerated` cycles. Reproduced with two
+different devices (RTL-SDR V3 dongle and a USB mass-storage flash disk),
+so the issue was not device-specific.
+
+**Diagnosis:** The OTG port does not source VBUS to a downstream device in
+host mode. With the flash disk disconnected, the P4 HS controller saw no
+attach at the PHY layer. Once **external 5V was injected to the device side**
+(VIA powered-USB or direct VBUS feed to the device), enumeration succeeded:
+
+```
+I (1884) esp_rtl_sdr: [RTL0] usb new_device addr=1 queued=1
+I (1884) esp_rtl_sdr: [RTL0] usb probe_begin addr=1
+W (1884) esp_rtl_sdr: [RTL0] reject USB addr=1 (not accepted profile)
+```
+
+The flash disk is correctly rejected by the driver (not an RTL-SDR profile).
+`hub_port_power_cycle` returned `ESP_ERR_NOT_FOUND` — no external hub present;
+the port is a direct root port.
+
+**Resolution for M1:** Provide 5V to the dongle's VBUS via a self-powered
+USB hub, active Type-C host adapter, or direct VBUS injection to the device.
+No firmware change is needed. After the RTL-SDR V3 is plugged in with power,
+driver events `EVT_READY` and `EVT_STREAM_STARTED` should follow.

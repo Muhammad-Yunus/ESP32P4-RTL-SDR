@@ -1,5 +1,9 @@
 idf_component_register(SRCS "main.c"
+                            "sdr_control.c"
+                            "bsp_bringup.c"
+                            "dsp/iq_ring.c"
                     INCLUDE_DIRS "."
+                                  "dsp"
                     REQUIRES
                         waveshare__esp32_p4_wifi6_touch_lcd_4b
                         hardcoreerik__esp-rtl-sdr

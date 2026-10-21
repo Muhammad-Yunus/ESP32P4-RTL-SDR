@@ -123,23 +123,29 @@ esp_rtl_sdr_uninstall(sdr);                 // destroy handle
 
 **Tuning & Control:**
 ```c
-esp_rtl_sdr_retune_hz(sdr, 107500000, 0);   // sync from app task
-esp_rtl_sdr_set_gain(sdr, 49);               // manual gain 0-49 dB
-esp_rtl_sdr_set_ppm(sdr, 0);                // crystal PPM ±200
+esp_rtl_sdr_retune_hz(sdr, 107500000);       // sync from app task (2 args in v0.9.3)
+esp_rtl_sdr_set_tuner_gain(sdr, 496);         // manual gain, tenths of dB (49.6 dB)
+esp_rtl_sdr_set_freq_correction(sdr, 0);      // crystal PPM ±200
 esp_rtl_sdr_apply_need(sdr, ESP_RTL_SDR_NEED_FM);  // preset: 960K, 96.1 MHz
 ```
+
+> **API naming note (v0.9.3 actual):** the desktop-shaped names `set_gain` /
+> `set_ppm` do **not** exist. Use `esp_rtl_sdr_set_tuner_gain(h, tenth_db)` and
+> `esp_rtl_sdr_set_freq_correction(h, ppm)`. `esp_rtl_sdr_retune_hz` takes
+> `(handle, hz)` (no third timeout arg). The stream-started event is
+> `ESP_RTL_SDR_EVT_STREAM_STARTED` (not `EVT_START`).
 
 **Events (callback context — must return fast, < 1 ms):**
 ```c
 void on_sdr_event(esp_rtl_sdr_event_t ev, const void *payload, void *ctx) {
     if (ev == ESP_RTL_SDR_EVT_IQ_BLOCK) {
         const esp_rtl_sdr_iq_block_t *iq = payload;
-        // iq->data: CU8, iq->size bytes
+        // iq->data: CU8, iq->bytes bytes
         // Copy to PSRAM ring; call esp_rtl_sdr_release_iq_block(ctx)
     }
-    if (ev == ESP_RTL_SDR_EVT_RETUNED) { /* LO confirmed applied */ }
-    if (ev == ESP_RTL_SDR_EVT_START)     { /* streaming confirmed */ }
-    if (ev == ESP_RTL_SDR_EVT_ERROR)     { /* log + trigger recovery */ }
+    if (ev == ESP_RTL_SDR_EVT_RETUNED)        { /* LO confirmed applied */ }
+    if (ev == ESP_RTL_SDR_EVT_STREAM_STARTED) { /* streaming confirmed */ }
+    if (ev == ESP_RTL_SDR_EVT_ERROR)          { /* log + trigger recovery */ }
 }
 ```
 
