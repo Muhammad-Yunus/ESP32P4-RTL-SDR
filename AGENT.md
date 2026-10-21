@@ -146,7 +146,7 @@ from `docs/`:
 | 1.7 | BSP display + audio bring-up | ✅ |
 | 1.8 | RTL-SDR stream start (96.1 MHz / 960 K) | ✅ |
 | 1.9 | IQ callback → ring copy | ✅ |
-| 1.10 | 30 s smoke test (`effective_sps > 900000`, `overruns == 0`) | ⬜ Blocked (needs powered RTL-SDR dongle on OTG) |
+| 1.10 | 30 s smoke test (`effective_sps > 900000`, `overruns == 0`) | 🔄 In progress (stream verified running; soak metrics assertion pending) |
 
 ### Unblocked — USB enumeration (resolved)
 

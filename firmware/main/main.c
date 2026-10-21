@@ -89,20 +89,34 @@ void app_main(void)
     }
 
     /*
-     * Task 1.8 + 1.9: attempt to start streaming at the default reference
-     * (KZEL 96.1 MHz, 960 KSPS) with IQ blocks copied into the ring. If the
-     * dongle is not present / not powered, sdr_control_start() returns a
-     * driver error (e.g. no accepted device) — log it and do NOT abort.
-     * When the powered dongle is connected, this yields EVT_READY +
-     * EVT_STREAM_STARTED and IQ blocks flowing into the ring (task 1.9).
+     * Task 1.8 + 1.9: wait for the dongle to enumerate, then start streaming
+     * at the default reference (KZEL 96.1 MHz, 960 KSPS). The dongle can
+     * enumerate at any time after boot, so poll sdr_control for up to 10 s.
+     * If it is not present, log and continue — the device still boots to a
+     * stable state.
      */
-    esp_err_t ss = sdr_stream_start(SDR_CONTROL_DEFAULT_FREQ_HZ,
-                                    SDR_CONTROL_DEFAULT_RATE_SP);
-    if (ss == ESP_OK) {
-        ESP_LOGI(TAG, "stream start requested; awaiting dongle (powered) for EVT_STREAM_STARTED");
+    int wait_ms = 0;
+    const int max_wait_ms = 10000;
+    while (wait_ms < max_wait_ms) {
+        if (sdr_control_device_ready()) {
+            break;
+        }
+        vTaskDelay(pdMS_TO_TICKS(500));
+        wait_ms += 500;
+    }
+    if (sdr_control_device_ready()) {
+        ESP_LOGI(TAG, "dongle ready after %d ms; starting stream", wait_ms);
+        esp_err_t ss = sdr_stream_start(SDR_CONTROL_DEFAULT_FREQ_HZ,
+                                        SDR_CONTROL_DEFAULT_RATE_SP);
+        if (ss == ESP_OK) {
+            ESP_LOGI(TAG, "stream start requested; awaiting EVT_STREAM_STARTED");
+        } else {
+            ESP_LOGW(TAG, "stream start failed: %s — boot continues without streaming",
+                     esp_rtl_sdr_err_to_name(ss));
+        }
     } else {
-        ESP_LOGW(TAG, "stream start failed: %s — expecting a powered RTL-SDR dongle "
-                "on the OTG port; boot continues without streaming",
-                 esp_rtl_sdr_err_to_name(ss));
+        ESP_LOGW(TAG, "no RTL-SDR dongle detected after %d ms — boot continues "
+                "without streaming; connect a powered dongle and reset",
+                max_wait_ms);
     }
 }

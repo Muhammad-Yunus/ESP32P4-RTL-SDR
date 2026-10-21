@@ -154,6 +154,14 @@ esp_rtl_sdr_handle_t sdr_control_get_handle(void);
 bool sdr_control_is_installed(void);
 
 /**
+ * True if an accepted RTL-SDR device is currently attached and the driver
+ * is in IDLE or STREAMING state (i.e. the device has been probed and the
+ * tuner interface is claimed).  Used to gate stream start until the dongle
+ * is actually present.
+ */
+bool sdr_control_device_ready(void);
+
+/**
  * Stop (if needed) and destroy the handle. Called on shutdown only.
  */
 esp_err_t sdr_control_deinit(void);

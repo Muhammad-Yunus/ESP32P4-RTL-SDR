@@ -251,6 +251,18 @@ bool sdr_control_is_installed(void)
     return s_installed;
 }
 
+bool sdr_control_device_ready(void)
+{
+    if (!s_installed) {
+        return false;
+    }
+    esp_rtl_sdr_device_info_t info;
+    if (esp_rtl_sdr_get_device_info(s_handle, &info) == ESP_OK) {
+        return info.present;
+    }
+    return false;
+}
+
 esp_err_t sdr_control_deinit(void)
 {
     if (!s_installed) {
